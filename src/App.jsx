@@ -56,7 +56,7 @@ function App() {
       
       {/* Header General */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', background: '#fff', padding: '15px 20px', borderRadius: '8px', border: '1px solid #ddd' }}>
-        <h2 style={{ margin: 0, fontSize: '20px', color: '#2c3e50' }}>Gestor de Proyectos (Mini-Jira)</h2>
+        <h2 style={{ margin: 0, fontSize: '20px', color: '#2c3e50' }}>Gestor de Proyectos</h2>
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
           <span style={{ fontSize: '13px', color: '#555' }}>
             Usuario: <strong>{session.user.email}</strong>
