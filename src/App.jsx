@@ -91,17 +91,19 @@ function App() {
 
   return (
     <div style={{ maxWidth: '450px', margin: '40px auto', fontFamily: 'sans-serif', padding: '20px', border: '1px solid #ddd', borderRadius: '8px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-        <h2 style={{ margin: 0, fontSize: '18px' }}>Mis Actividades</h2>
+      
+      {/* Header con el título a la izquierda y el botón de cerrar sesión a la derecha */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+        <h2 style={{ margin: 0, fontSize: '20px' }}>Mis Actividades</h2>
         <button 
           onClick={() => supabase.auth.signOut()} 
-          style={{ background: '#6c757d', color: '#fff', border: 'none', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
+          style={{ background: '#dc3545', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
         >
           Cerrar sesión
         </button>
       </div>
 
-      <p style={{ fontSize: '12px', color: '#666', marginBottom: '20px' }}>
+      <p style={{ fontSize: '12px', color: '#666', marginBottom: '20px', marginTop: '0px' }}>
         Conectado como: <strong>{session.user.email}</strong>
       </p>
       
