@@ -1,17 +1,34 @@
 import { useState, useEffect } from 'react';
 import TaskForm from './components/TaskForm';
 import TaskList from './components/TaskList';
+import Auth from './components/Auth';
 import { supabase } from './supabaseClient';
 import './App.css';
 
 function App() {
+  const [session, setSession] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [inputTask, setInputTask] = useState('');
 
-  // 1. Cargar las tareas desde Supabase al iniciar la aplicación
   useEffect(() => {
-    fetchTasks();
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (session) {
+      fetchTasks();
+    } else {
+      setTasks([]);
+    }
+  }, [session]);
 
   async function fetchTasks() {
     const { data, error } = await supabase
@@ -23,7 +40,6 @@ function App() {
     else setTasks(data || []);
   }
 
-  // 2. Agregar una tarea guardándola en la base de datos
   const handleAddTask = async (e) => {
     e.preventDefault();
     if (inputTask.trim() === '') return;
@@ -41,7 +57,6 @@ function App() {
     }
   };
 
-  // 3. Alternar el estado completed (completado/pendiente) en la base de datos
   const handleToggleComplete = async (id, currentCompleted) => {
     const { error } = await supabase
       .from('tasks')
@@ -57,7 +72,6 @@ function App() {
     }
   };
 
-  // 4. Eliminar una tarea de la base de datos
   const handleDeleteTask = async (id) => {
     const { error } = await supabase
       .from('tasks')
@@ -71,9 +85,25 @@ function App() {
     }
   };
 
+  if (!session) {
+    return <Auth />;
+  }
+
   return (
     <div style={{ maxWidth: '450px', margin: '40px auto', fontFamily: 'sans-serif', padding: '20px', border: '1px solid #ddd', borderRadius: '8px' }}>
-      <h2>Gestor con Base de Datos (Supabase)</h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+        <h2 style={{ margin: 0, fontSize: '18px' }}>Mis Actividades</h2>
+        <button 
+          onClick={() => supabase.auth.signOut()} 
+          style={{ background: '#6c757d', color: '#fff', border: 'none', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
+        >
+          Cerrar sesión
+        </button>
+      </div>
+
+      <p style={{ fontSize: '12px', color: '#666', marginBottom: '20px' }}>
+        Conectado como: <strong>{session.user.email}</strong>
+      </p>
       
       <TaskForm 
         inputTask={inputTask} 
