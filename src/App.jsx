@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
-import TaskForm from './components/TaskForm';
-import TaskList from './components/TaskList';
+import ProjectManager from './components/ProjectManager';
+import KanbanBoard from './components/KanbanBoard';
+import TaskModal from './components/TaskModal';
 import Auth from './components/Auth';
 import { supabase } from './supabaseClient';
 import './App.css';
 
 function App() {
   const [session, setSession] = useState(null);
+  const [selectedProject, setSelectedProject] = useState(null);
   const [tasks, setTasks] = useState([]);
-  const [inputTask, setInputTask] = useState('');
+  const [activeTaskForModal, setActiveTaskForModal] = useState(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -22,67 +24,28 @@ function App() {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Cargar tareas cada vez que cambie el proyecto seleccionado
   useEffect(() => {
-    if (session) {
-      fetchTasks();
+    if (session && selectedProject) {
+      fetchTasks(selectedProject.id);
     } else {
       setTasks([]);
     }
-  }, [session]);
+  }, [session, selectedProject]);
 
-  async function fetchTasks() {
+  async function fetchTasks(projectId) {
     const { data, error } = await supabase
       .from('tasks')
       .select('*')
+      .eq('project_id', projectId)
       .order('id', { ascending: false });
 
     if (error) console.error('Error al obtener tareas:', error);
     else setTasks(data || []);
   }
 
-  const handleAddTask = async (e) => {
-    e.preventDefault();
-    if (inputTask.trim() === '') return;
-
-    const { data, error } = await supabase
-      .from('tasks')
-      .insert([{ texto: inputTask, completed: false }])
-      .select();
-
-    if (error) {
-      console.error('Error al agregar tarea:', error);
-    } else if (data) {
-      setTasks([data[0], ...tasks]);
-      setInputTask('');
-    }
-  };
-
-  const handleToggleComplete = async (id, currentCompleted) => {
-    const { error } = await supabase
-      .from('tasks')
-      .update({ completed: !currentCompleted })
-      .eq('id', id);
-
-    if (error) {
-      console.error('Error al actualizar tarea:', error);
-    } else {
-      setTasks(tasks.map(task => 
-        task.id === id ? { ...task, completed: !currentCompleted } : task
-      ));
-    }
-  };
-
-  const handleDeleteTask = async (id) => {
-    const { error } = await supabase
-      .from('tasks')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      console.error('Error al borrar tarea:', error);
-    } else {
-      setTasks(tasks.filter(task => task.id !== id));
-    }
+  const handleUpdateTaskInState = (updatedTask) => {
+    setTasks(tasks.map(t => t.id === updatedTask.id ? updatedTask : t));
   };
 
   if (!session) {
@@ -90,34 +53,47 @@ function App() {
   }
 
   return (
-    <div style={{ maxWidth: '450px', margin: '40px auto', fontFamily: 'sans-serif', padding: '20px', border: '1px solid #ddd', borderRadius: '8px' }}>
+    <div style={{ maxWidth: '1200px', margin: '20px auto', fontFamily: 'sans-serif', padding: '20px', border: '1px solid #ddd', borderRadius: '8px', background: '#fff' }}>
       
-      {/* Header con el título a la izquierda y el botón de cerrar sesión a la derecha */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-        <h2 style={{ margin: 0, fontSize: '20px' }}>Mis Actividades</h2>
-        <button 
-          onClick={() => supabase.auth.signOut()} 
-          style={{ background: '#dc3545', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
-        >
-          Cerrar sesión
-        </button>
+      {/* Header General */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', borderBottom: '1px solid #eee', paddingBottom: '12px' }}>
+        <h2 style={{ margin: 0, fontSize: '22px', color: '#2c3e50' }}>Gestor de Proyectos (Mini-Jira)</h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+          <span style={{ fontSize: '13px', color: '#555' }}>
+            Usuario: <strong>{session.user.email}</strong>
+          </span>
+          <button 
+            onClick={() => supabase.auth.signOut()} 
+            style={{ background: '#dc3545', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
+          >
+            Cerrar sesión
+          </button>
+        </div>
       </div>
 
-      <p style={{ fontSize: '12px', color: '#666', marginBottom: '20px', marginTop: '0px' }}>
-        Conectado como: <strong>{session.user.email}</strong>
-      </p>
-      
-      <TaskForm 
-        inputTask={inputTask} 
-        setInputTask={setInputTask} 
-        handleAddTask={handleAddTask} 
+      {/* Selector y Creador de Proyectos */}
+      <ProjectManager 
+        selectedProject={selectedProject} 
+        setSelectedProject={setSelectedProject} 
       />
-      
-      <TaskList 
-        tasks={tasks} 
-        handleDeleteTask={handleDeleteTask} 
-        handleToggleComplete={handleToggleComplete}
+
+      {/* Tablero Kanban estilo Jira */}
+      <KanbanBoard 
+        selectedProject={selectedProject}
+        tasks={tasks}
+        setTasks={setTasks}
+        onOpenTaskDetail={(task) => setActiveTaskForModal(task)}
       />
+
+      {/* Modal de Detalle de Tarea (Fechas y Comentarios) */}
+      {activeTaskForModal && (
+        <TaskModal 
+          task={activeTaskForModal}
+          onClose={() => setActiveTaskForModal(null)}
+          onUpdateTask={handleUpdateTaskInState}
+        />
+      )}
+
     </div>
   );
 }
