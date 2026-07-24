@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 
-function ProjectManager({ selectedProject, setSelectedProject }) {
+function ProjectManager({ onSelectProject }) {
   const [projects, setProjects] = useState([]);
   const [newProjectName, setNewProjectName] = useState('');
   const [loading, setLoading] = useState(false);
@@ -20,10 +20,6 @@ function ProjectManager({ selectedProject, setSelectedProject }) {
       console.error('Error al cargar proyectos:', error);
     } else {
       setProjects(data || []);
-      // Si hay proyectos y ninguno seleccionado, seleccionamos el primero por defecto
-      if (data && data.length > 0 && !selectedProject) {
-        setSelectedProject(data[0]);
-      }
     }
   }
 
@@ -41,53 +37,50 @@ function ProjectManager({ selectedProject, setSelectedProject }) {
       console.error('Error al crear proyecto:', error);
     } else if (data && data[0]) {
       setProjects([data[0], ...projects]);
-      setSelectedProject(data[0]); // Seleccionar el recién creado
-      setNewProjectName('');
+      onSelectProject(data[0]); // Entrar directamente al tablero del nuevo proyecto
     }
     setLoading(false);
   };
 
   return (
-    <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '20px', background: '#f8f9fa', padding: '10px', borderRadius: '6px', border: '1px solid #e9ecef' }}>
-      <div style={{ flex: 1 }}>
-        <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Proyecto Actual:</label>
-        <select 
-          value={selectedProject ? selectedProject.id : ''} 
-          onChange={(e) => {
-            const found = projects.find(p => p.id === Number(e.target.value));
-            setSelectedProject(found);
-          }}
-          style={{ width: '100%', padding: '6px', fontSize: '14px', borderRadius: '4px', border: '1px solid #ccc' }}
-        >
-          {projects.length === 0 ? (
-            <option value="">No hay proyectos creados</option>
-          ) : (
-            projects.map(proj => (
-              <option key={proj.id} value={proj.id}>{proj.name}</option>
-            ))
-          )}
-        </select>
-      </div>
-
-      <form onSubmit={handleCreateProject} style={{ display: 'flex', gap: '5px', alignItems: 'flex-end' }}>
-        <div>
-          <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Nuevo Proyecto:</label>
-          <input 
-            type="text" 
-            placeholder="Nombre del proyecto..." 
-            value={newProjectName}
-            onChange={(e) => setNewProjectName(e.target.value)}
-            style={{ padding: '6px', fontSize: '14px', borderRadius: '4px', border: '1px solid #ccc' }}
-          />
-        </div>
+    <div style={{ maxWidth: '600px', margin: '40px auto', padding: '20px', background: '#fff', borderRadius: '8px', border: '1px solid #ddd', fontFamily: 'sans-serif' }}>
+      <h3 style={{ marginTop: 0, color: '#2c3e50', borderBottom: '1px solid #eee', paddingBottom: '10px' }}>Mis Proyectos</h3>
+      
+      {/* Formulario para nuevo proyecto */}
+      <form onSubmit={handleCreateProject} style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+        <input 
+          type="text" 
+          placeholder="Nombre del nuevo proyecto..." 
+          value={newProjectName}
+          onChange={(e) => setNewProjectName(e.target.value)}
+          style={{ flex: 1, padding: '8px', fontSize: '14px', borderRadius: '4px', border: '1px solid #ccc' }}
+        />
         <button 
           type="submit" 
           disabled={loading}
-          style={{ padding: '7px 12px', background: '#28a745', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', height: '33px' }}
+          style={{ padding: '8px 16px', background: '#28a745', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
         >
-          + Crear
+          + Crear Proyecto
         </button>
       </form>
+
+      {/* Lista de proyectos */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        {projects.length === 0 ? (
+          <p style={{ color: '#666', textAlign: 'center' }}>No tienes proyectos creados aún. ¡Crea uno arriba!</p>
+        ) : (
+          projects.map(proj => (
+            <div 
+              key={proj.id} 
+              onClick={() => onSelectProject(proj)}
+              style={{ padding: '15px', background: '#f8f9fa', borderRadius: '6px', border: '1px solid #dcdde1', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transition: 'background 0.2s' }}
+            >
+              <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#333' }}>{proj.name}</span>
+              <span style={{ fontSize: '13px', color: '#007bff', fontWeight: 'bold' }}>Abrir Tablero →</span>
+            </div>
+          ))
+        )}
+      </div>
     </div>
   );
 }

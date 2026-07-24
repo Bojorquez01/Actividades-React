@@ -24,7 +24,6 @@ function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Cargar tareas cada vez que cambie el proyecto seleccionado
   useEffect(() => {
     if (session && selectedProject) {
       fetchTasks(selectedProject.id);
@@ -53,11 +52,11 @@ function App() {
   }
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '20px auto', fontFamily: 'sans-serif', padding: '20px', border: '1px solid #ddd', borderRadius: '8px', background: '#fff' }}>
+    <div style={{ maxWidth: '1200px', margin: '20px auto', fontFamily: 'sans-serif', padding: '20px' }}>
       
       {/* Header General */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', borderBottom: '1px solid #eee', paddingBottom: '12px' }}>
-        <h2 style={{ margin: 0, fontSize: '22px', color: '#2c3e50' }}>Gestor de Proyectos (Mini-Jira)</h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', background: '#fff', padding: '15px 20px', borderRadius: '8px', border: '1px solid #ddd' }}>
+        <h2 style={{ margin: 0, fontSize: '20px', color: '#2c3e50' }}>Gestor de Proyectos (Mini-Jira)</h2>
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
           <span style={{ fontSize: '13px', color: '#555' }}>
             Usuario: <strong>{session.user.email}</strong>
@@ -71,21 +70,22 @@ function App() {
         </div>
       </div>
 
-      {/* Selector y Creador de Proyectos */}
-      <ProjectManager 
-        selectedProject={selectedProject} 
-        setSelectedProject={setSelectedProject} 
-      />
+      {/* Si no hay proyecto seleccionado, mostramos la pantalla de proyectos. Si hay uno, mostramos el Kanban */}
+      {!selectedProject ? (
+        <ProjectManager onSelectProject={(proj) => setSelectedProject(proj)} />
+      ) : (
+        <div style={{ background: '#fff', padding: '20px', borderRadius: '8px', border: '1px solid #ddd' }}>
+          <KanbanBoard 
+            selectedProject={selectedProject}
+            tasks={tasks}
+            setTasks={setTasks}
+            onOpenTaskDetail={(task) => setActiveTaskForModal(task)}
+            onBackToProjects={() => setSelectedProject(null)}
+          />
+        </div>
+      )}
 
-      {/* Tablero Kanban estilo Jira */}
-      <KanbanBoard 
-        selectedProject={selectedProject}
-        tasks={tasks}
-        setTasks={setTasks}
-        onOpenTaskDetail={(task) => setActiveTaskForModal(task)}
-      />
-
-      {/* Modal de Detalle de Tarea (Fechas y Comentarios) */}
+      {/* Modal de Detalle de Tarea */}
       {activeTaskForModal && (
         <TaskModal 
           task={activeTaskForModal}
